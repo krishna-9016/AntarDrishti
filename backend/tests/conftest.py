@@ -1,0 +1,119 @@
+"""
+Shared fixtures.
+
+Modules live in packages under backend/ (core, geo, detection, pipeline),
+so backend/ goes on sys.path and imports read `from detection import sar`.
+"""
+
+import json
+import sys
+from pathlib import Path
+
+import pytest
+
+BACKEND = Path(__file__).resolve().parent.parent
+CONTRACTS = BACKEND.parent / "contracts"
+
+if str(BACKEND) not in sys.path:
+    sys.path.insert(0, str(BACKEND))
+
+# Load .env so the marked tests can find GROQ_API_KEY and EE_PROJECT_ID.
+# Without this, `pytest -m llm` silently skips even when the key is configured -
+# a skipped test reads like a passing one, which is worse than a failure.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(BACKEND / ".env")
+except ImportError:
+    pass
+
+# The test suite exercises the endpoints directly. Sign-in is tested on its
+# own (tests/test_auth.py), which switches it back on; everywhere else it is
+# off, and nothing touches the real user database or a real SECRET_KEY.
+import os as _os
+import tempfile as _tempfile
+
+_os.environ["AUTH_REQUIRED"] = "false"
+_os.environ["DATABASE_PATH"] = str(Path(_tempfile.mkdtemp(prefix="antardrishti-test-")) / "app.db")
+# Blanked rather than removed: main.py calls load_dotenv() again on import,
+# and that refills any key that is MISSING - so a removed MONGODB_URI came
+# back from backend/.env and the tests would talk to the real Atlas database.
+# load_dotenv never overrides a key that is present, even an empty one.
+_os.environ["ADMIN_USERNAME"] = ""
+_os.environ["ADMIN_PASSWORD"] = ""
+_os.environ["ANALYSES_PER_HOUR"] = "100000"
+_os.environ["LOG_FORMAT"] = "text"
+_os.environ["SATELLITE_WARM"] = "false"
+_os.environ["MAINTENANCE_SWEEP"] = "false"
+_os.environ["MAIL_SYNC"] = "1"
+_os.environ["MONGODB_URI"] = ""
+_os.environ["SMTP_HOST"] = ""
+# The server's service account is not for tests: the tests that need one set
+# it themselves, and the rest expect the laptop login (or a stand-in).
+_os.environ["EE_SERVICE_ACCOUNT"] = ""
+_os.environ["EE_PRIVATE_KEY_FILE"] = ""
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    from core import security
+    security.ANALYSIS_LIMITER.reset()
+    security.SIGNUP_LIMITER.reset()
+    yield
+
+
+@pytest.fixture(scope="session")
+def contract():
+    """The worked example every workstream builds against."""
+    return json.loads((CONTRACTS / "analysis_response.json").read_text(encoding="utf-8"))
+
+
+@pytest.fixture
+def evidence(contract):
+    return contract["evidence"]
+
+
+@pytest.fixture
+def flood_payload():
+    """A minimal but realistic flood response, built by hand.
+
+    Deliberately not the contract fixture: this one is small enough to reason
+    about, so a failing assertion points at one value.
+    """
+    return {
+        "region": {"name": "Kendrapara", "area_km2": 2644.0},
+        "observation": {
+            "sensor_used": "sentinel-1",
+            "observable_area_km2": 2598.0,
+            "coverage_fraction": 0.983,
+            "scenes_used": 6,
+            "scenes_available": 14,
+        },
+        "unobserved": {"masked_area_km2": 46.0, "notes": []},
+        "evidence": [
+            {
+                "id": "E1",
+                "quantity": "flood_extent",
+                "value": 187.4,
+                "unit": "km2",
+                "threshold": -20.0,
+                "method": "Sentinel-1 VV+VH at -20.0 dB",
+            },
+            {
+                "id": "E2",
+                "quantity": "flood_extent_fraction",
+                "value": 7.21,
+                "unit": "percent",
+                "derived_from": ["E1"],
+            },
+        ],
+        "zones": [
+            {
+                "id": "Z1",
+                "rank": 1,
+                "area_km2": 42.1,
+                "centroid": [86.42, 20.51],
+                "severity": "high",
+            }
+        ],
+    }

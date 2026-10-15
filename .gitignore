@@ -1,0 +1,87 @@
+# Secrets --------------------------------------------------------------------
+#
+# .env holds GROQ_API_KEY and EE_PROJECT_ID. Earth Engine credentials normally
+# live outside the project in ~/.config/earthengine, but they are listed here
+# too in case anyone copies them in - that file is a long-lived secret.
+.env
+*.env
+credentials
+credentials.json
+*_credentials.json
+
+
+# Dependencies ----------------------------------------------------------------
+#
+# venv/ sits inside backend/ for historical reasons. It is several hundred
+# megabytes, and is why file searches in this project are slow.
+backend/venv/
+venv/
+.venv/
+env/
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+
+# Python ----------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+
+# Trained models --------------------------------------------------------------
+#
+# The binaries are large and are rebuilt by scripts/train_landcover.py. The
+# metadata JSON beside them IS tracked: it records what each model was trained
+# on, which features in which order, and what it scored. Without it a .pkl is
+# an unlabelled blob.
+models/*.pkl
+models/*.pt
+models/*.pth
+
+
+# Generated imagery and vectors -----------------------------------------------
+#
+# Refetched from Earth Engine on demand.
+data/raw/
+outputs/images/
+outputs/vectors/
+
+
+# Notebooks -------------------------------------------------------------------
+#
+# The notebooks themselves are tracked; their execution state is not. Clear
+# outputs before committing: an OAuth verification code was once committed in
+# a cell output of gee_auth.ipynb.
+.ipynb_checkpoints/
+
+
+# Editor and OS ---------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+
+# Uploaded boundaries (geo/boundary_upload.py) --------------------------------
+#
+# A district office's boundary file is its own data, kept only so a shape can
+# be picked from it without uploading twice. Never committed.
+data/boundaries/
+
+# Accounts and jobs (core/auth.py, core/jobs.py) - never committed.
+data/app.db
+data/*.db
+
+# Service-account keys for Docker (DEPLOYMENT.md).
+secrets/
+
+# Result cache and OpenStreetMap lookups - regenerated, never committed.
+data/cache/
+
+# Raw Earth Engine export CSVs downloaded from Drive (notebooks 10, 11).
+# The combined tables beside them in evaluation/ are what is kept.
+evaluation/ee_exports/

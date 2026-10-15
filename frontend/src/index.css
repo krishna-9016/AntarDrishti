@@ -1,0 +1,45 @@
+/* Base. No web fonts: the content policy allows only this origin, and a demo
+   must not depend on a font server. Inter if installed, else the system UI. */
+
+:root {
+  font-family: Inter, 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+  line-height: 1.55;
+  font-weight: 400;
+  color: #1F2937;
+  background: #F7F9FC;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+body, button, input, select, textarea { font-family: inherit; }
+
+#root { min-height: 100vh; }
+
+h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; line-height: 1.25; }
+
+p { margin: 0; }
+
+button { font: inherit; }
+
+img { max-width: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
